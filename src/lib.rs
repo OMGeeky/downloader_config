@@ -27,8 +27,8 @@ pub struct Config {
 }
 
 pub fn load_config() -> Config {
-    let twitch_client_id = env::var("TWITCH_CLIENT_ID").unwrap();
-    let twitch_client_secret = env::var("TWITCH_CLIENT_SECRET").unwrap();
+    let twitch_client_id = env::var("TWITCH_CLIENT_ID").expect("TWITCH_CLIENT_ID not set");
+    let twitch_client_secret = env::var("TWITCH_CLIENT_SECRET").expect("TWITCH_CLIENT_SECRET not set");
     let twitch_downloader_id = "kimne78kx3ncx6brgo4mv6wki5h1ko".to_string();
 
     let path_auth_code =
