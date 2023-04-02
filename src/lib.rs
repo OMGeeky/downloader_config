@@ -1,6 +1,9 @@
 use std::env;
+use std::fmt::{Debug};
 
-#[derive(Clone)]
+use log::{info, trace};
+
+#[derive(Clone, Debug)]
 pub struct Config {
     pub path_auth_code: String,
     pub path_authentications: String,
@@ -27,6 +30,8 @@ pub struct Config {
 }
 
 pub fn load_config() -> Config {
+    trace!("load_config()");
+    info!("Loading config from environment variables");
     let twitch_client_id = env::var("TWITCH_CLIENT_ID").expect("TWITCH_CLIENT_ID not set");
     let twitch_client_secret = env::var("TWITCH_CLIENT_SECRET").expect("TWITCH_CLIENT_SECRET not set");
     let twitch_downloader_id = "kimne78kx3ncx6brgo4mv6wki5h1ko".to_string();
@@ -63,13 +68,14 @@ pub fn load_config() -> Config {
         env::var("YOUTUBE_DESCRIPTION_TEMPLATE").unwrap_or("test description for \"$$video_title$$\"".to_string());
 
     let youtube_video_length_minutes =
-        env::var("YOUTUBE_VIDEO_LENGTH_MINUTES").unwrap_or("30".to_string() ).parse().unwrap_or(30i64);
+        env::var("YOUTUBE_VIDEO_LENGTH_MINUTES").unwrap_or("30".to_string()).parse().unwrap_or(30i64);
 
 
     let download_folder_path =
         env::var("DOWNLOAD_FOLDER_PATH").unwrap_or("/tmp/twba/videos/".to_string());
     let downloader_threads =
         env::var("DOWNLOADER_THREADS").unwrap_or(10.to_string()).parse().unwrap();
+    trace!("load_config() done loading fields");
     Config {
         path_auth_code,
         use_file_auth_response,
