@@ -22,7 +22,8 @@ pub struct Config {
     pub youtube_client_secret_path: String,
     pub youtube_tags: Vec<String>,
     pub youtube_description_template: String,
-    pub youtube_video_length_minutes: i64,
+    pub youtube_video_length_minutes_soft_cap: i64,
+    pub youtube_video_length_minutes_hard_cap: i64,
 
     pub download_folder_path: String,
     pub downloader_threads: usize,
@@ -67,8 +68,10 @@ pub fn load_config() -> Config {
     let youtube_description_template =
         env::var("YOUTUBE_DESCRIPTION_TEMPLATE").unwrap_or("test description for \"$$video_title$$\"".to_string());
 
-    let youtube_video_length_minutes =
-        env::var("YOUTUBE_VIDEO_LENGTH_MINUTES").unwrap_or("30".to_string()).parse().unwrap_or(30i64);
+    let youtube_video_length_minutes_soft_cap =
+        env::var("YOUTUBE_VIDEO_LENGTH_MINUTES_SOFT_CAP").unwrap_or("300".to_string()).parse().unwrap_or(30i64);
+    let youtube_video_length_minutes_hard_cap =
+        env::var("YOUTUBE_VIDEO_LENGTH_MINUTES_HARD_CAP").unwrap_or("359".to_string()).parse().unwrap_or(30i64);
 
 
     let download_folder_path =
@@ -91,7 +94,8 @@ pub fn load_config() -> Config {
         youtube_client_secret_path,
         youtube_tags,
         youtube_description_template,
-        youtube_video_length_minutes,
+        youtube_video_length_minutes_soft_cap,
+        youtube_video_length_minutes_hard_cap,
         download_folder_path,
         downloader_threads,
     }
