@@ -1,5 +1,5 @@
 use std::env;
-use std::fmt::{Debug};
+use std::fmt::Debug;
 
 use log::{info, trace};
 
@@ -35,7 +35,8 @@ pub fn load_config() -> Config {
     info!("Loading config from environment variables");
     let twitch_client_id = env::var("TWITCH_CLIENT_ID").expect("TWITCH_CLIENT_ID not set");
     let twitch_client_secret = env::var("TWITCH_CLIENT_SECRET").expect("TWITCH_CLIENT_SECRET not set");
-    let twitch_downloader_id = "kimne78kx3ncx6brgo4mv6wki5h1ko".to_string();
+    let twitch_downloader_id = env::var("TWITCH_DOWNLOADER_ID")
+        .unwrap_or("kimne78kx3ncx6brgo4mv6wki5h1ko".to_string());
 
     let path_auth_code =
         env::var("PATH_AUTH_CODE").unwrap_or("/tmp/twba/auth/code.txt".to_string());
