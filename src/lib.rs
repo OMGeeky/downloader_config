@@ -14,6 +14,7 @@ pub struct Config {
     pub twitch_client_id: String,
     pub twitch_client_secret: String,
     pub twitch_downloader_id: String,
+    pub twitch_downloader_thread_count: u64,
 
     pub bigquery_project_id: String,
     pub bigquery_dataset_id: String,
@@ -37,6 +38,11 @@ pub fn load_config() -> Config {
     let twitch_client_secret = env::var("TWITCH_CLIENT_SECRET").expect("TWITCH_CLIENT_SECRET not set");
     let twitch_downloader_id = env::var("TWITCH_DOWNLOADER_ID")
         .unwrap_or("kimne78kx3ncx6brgo4mv6wki5h1ko".to_string());
+
+    let twitch_downloader_thread_count = env::var("TWITCH_DOWNLOADER_THREAD_COUNT")
+        .unwrap_or("50".to_string())
+        .parse()
+        .expect("TWITCH_DOWNLOADER_THREAD_COUNT is not a number");
 
     let path_auth_code =
         env::var("PATH_AUTH_CODE").unwrap_or("/tmp/twba/auth/code.txt".to_string());
@@ -89,6 +95,7 @@ pub fn load_config() -> Config {
         twitch_client_id,
         twitch_client_secret,
         twitch_downloader_id,
+        twitch_downloader_thread_count,
         bigquery_project_id,
         bigquery_dataset_id,
         bigquery_service_account_path,
