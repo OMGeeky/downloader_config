@@ -27,8 +27,6 @@ pub struct Config {
     pub youtube_video_length_minutes_hard_cap: i64,
 
     pub download_folder_path: String,
-    pub downloader_threads: usize,
-
 }
 
 pub fn load_config() -> Config {
@@ -83,8 +81,7 @@ pub fn load_config() -> Config {
 
     let download_folder_path =
         env::var("DOWNLOAD_FOLDER_PATH").unwrap_or("/tmp/twba/videos/".to_string());
-    let downloader_threads =
-        env::var("DOWNLOADER_THREADS").unwrap_or(10.to_string()).parse().unwrap();
+
     trace!("load_config() done loading fields");
     Config {
         path_auth_code,
@@ -105,6 +102,5 @@ pub fn load_config() -> Config {
         youtube_video_length_minutes_soft_cap,
         youtube_video_length_minutes_hard_cap,
         download_folder_path,
-        downloader_threads,
     }
 }
