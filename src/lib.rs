@@ -69,12 +69,13 @@ pub fn load_config() -> Config {
     let config_file_path: Option<String>;
     #[cfg(feature = "file")]
     {
-        info!("Loading config from file");
+        trace!("getting config file path from environment variable");
         config_file_path = env::var("CONFIG_FILE_PATH").ok();
         if config_file_path.is_some() {
             log::warn!("Failed to load config file path from environment variable. Using environment variables instead.");
             use_env = true;
         } else {
+            trace!("found config file path: {}", config_file_path.as_ref().unwrap());
             use_env = false;
         }
     }
@@ -110,10 +111,11 @@ pub fn load_config() -> Config {
 
             download_folder_path: env::var("DOWNLOAD_FOLDER_PATH").ok(),
         };
-        trace!("load_config() done loading fields");
+        trace!("load_config() done loading fields from environment variables");
     } else {
         #[cfg(feature = "file")]
         {
+            info!("load_config() loading fields from file");
             let config_file_path = config_file_path.expect(
                 "Failed to load config file path from environment variable, \
                 but still ended up in the file config loading code.",
@@ -129,8 +131,8 @@ pub fn load_config() -> Config {
         #[cfg(not(feature = "file"))]
         panic!("Failed to load config from file and environment variables");
     }
-
-    Config {
+    trace!("load_config() building config");
+    let config = Config {
         path_auth_code: config_builder
             .path_auth_code
             .unwrap_or("/tmp/twba/auth/code.txt".to_string()),
@@ -198,5 +200,8 @@ pub fn load_config() -> Config {
         download_folder_path: config_builder
             .download_folder_path
             .unwrap_or("/tmp/twba/videos/".to_string()),
-    }
+    };
+
+    trace!("load_config() done");
+    config
 }
