@@ -71,7 +71,7 @@ pub fn load_config() -> Config {
     {
         trace!("getting config file path from environment variable");
         config_file_path = env::var("CONFIG_FILE_PATH").ok();
-        if config_file_path.is_some() {
+        if config_file_path.is_none() {
             log::warn!("Failed to load config file path from environment variable. Using environment variables instead.");
             use_env = true;
         } else {
