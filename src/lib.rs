@@ -199,7 +199,7 @@ pub fn load_config() -> Config {
             .unwrap_or(60i64),
         download_folder_path: config_builder
             .download_folder_path
-            .unwrap_or("/tmp/twba/videos/".to_string()),
+            .unwrap_or("/var/tmp/twba/videos/".to_string()),
     };
 
     trace!("load_config() done");
