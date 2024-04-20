@@ -1,5 +1,5 @@
 [package]
-name = "downloader_config"
+name = "twba-downloader-config"
 version = "0.4.4"
 edition = "2021"
 
