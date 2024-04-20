@@ -1,9 +1,12 @@
+#[cfg(all(feature = "log", not(feature = "tracing")))]
+use log::*;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::fmt::Debug;
+#[cfg(feature = "tracing")]
+use tracing::*;
 
-use log::{info, trace};
-use serde::{Deserialize, Serialize};
-
+type Result<T> = std::result::Result<T, ConfigLoadError>;
 #[derive(Clone, Debug)]
 pub struct Config {
     pub path_auth_code: String,
@@ -56,7 +59,33 @@ struct ConfigBuilder {
     pub download_folder_path: Option<String>,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigLoadError {
+    #[error("Failed to load config from path: {0}")]
+    IOReadPath(#[source] std::io::Error, String),
+    #[cfg(feature = "file")]
+    #[error("Could not parse config file: {0}")]
+    Parse(#[from] serde_json::error::Error),
+
+    #[cfg(not(feature = "file"))]
+    #[error("Failed to load config from environment variables and file config is disabled")]
+    FailedToLoadFromEnv,
+    //content errors
+    #[error("AUTH_FILE_READ_TIMEOUT is not a number: {0}")]
+    AuthFileReadTimeoutNotANumber(#[source] std::num::ParseIntError),
+    #[error("TWITCH_DOWNLOADER_THREAD_COUNT is not a number: {0}")]
+    TwitchDownloaderThreadCountNotANumber(#[source] std::num::ParseIntError),
+    #[error("TWITCH_CLIENT_ID not set")]
+    TwitchClientIdNotSet,
+    #[error("TWITCH_CLIENT_SECRET not set")]
+    TwitchClientSecretNotSet,
+}
+
 pub fn load_config() -> Config {
+    try_load_config().expect("Failed to load config")
+}
+pub fn try_load_config() -> Result<Config> {
+    #[cfg(any(feature = "log", feature = "tracing"))]
     trace!("load_config()");
     let config_builder: ConfigBuilder;
     let use_env;
@@ -69,17 +98,21 @@ pub fn load_config() -> Config {
     let config_file_path: Option<String>;
     #[cfg(feature = "file")]
     {
+        #[cfg(any(feature = "log", feature = "tracing"))]
         trace!("getting config file path from environment variable");
         config_file_path = env::var("CONFIG_FILE_PATH").ok();
         if config_file_path.is_none() {
-            log::warn!("Failed to load config file path from environment variable. Using environment variables instead.");
+            #[cfg(any(feature = "log", feature = "tracing"))]
+            warn!("Failed to load config file path from environment variable. Using environment variables instead.");
             use_env = true;
         } else {
-            trace!("found config file path: {}", config_file_path.as_ref().unwrap());
+            #[cfg(any(feature = "log", feature = "tracing"))]
+            trace!("found config file path: {:?}", config_file_path);
             use_env = false;
         }
     }
     if use_env {
+        #[cfg(any(feature = "log", feature = "tracing"))]
         info!("Loading config from environment variables");
         config_builder = ConfigBuilder {
             twitch_client_id: env::var("TWITCH_CLIENT_ID").ok(),
@@ -111,28 +144,37 @@ pub fn load_config() -> Config {
 
             download_folder_path: env::var("DOWNLOAD_FOLDER_PATH").ok(),
         };
+        #[cfg(any(feature = "log", feature = "tracing"))]
         trace!("load_config() done loading fields from environment variables");
     } else {
         #[cfg(feature = "file")]
         {
+            #[cfg(any(feature = "log", feature = "tracing"))]
             info!("load_config() loading fields from file");
             let config_file_path = config_file_path.expect(
                 "Failed to load config file path from environment variable, \
                 but still ended up in the file config loading code.",
             );
-            let config_file = std::fs::read_to_string(&config_file_path).expect(&format!(
-                "Failed to read config file at path: {}",
-                config_file_path
-            ));
-            config_builder =
-                serde_json::from_str(&config_file).expect("Failed to parse config file");
+            let config_file = std::fs::read_to_string(&config_file_path)
+                .map_err(|e| ConfigLoadError::IOReadPath(e, config_file_path))?;
+            config_builder = serde_json::from_str(&config_file)?;
+            #[cfg(any(feature = "log", feature = "tracing"))]
             trace!("load_config() done loading fields from file");
         }
         #[cfg(not(feature = "file"))]
-        panic!("Failed to load config from file and environment variables");
+        return Err(ConfigLoadError::FailedToLoadFromEnv);
     }
+    #[cfg(any(feature = "log", feature = "tracing"))]
     trace!("load_config() building config");
-    let config = Config {
+    let config = build(config_builder)?;
+
+    #[cfg(any(feature = "log", feature = "tracing"))]
+    trace!("load_config() done");
+    Ok(config)
+}
+
+fn build(config_builder: ConfigBuilder) -> Result<Config> {
+    Ok(Config {
         path_auth_code: config_builder
             .path_auth_code
             .unwrap_or("/tmp/twba/auth/code.txt".to_string()),
@@ -151,13 +193,13 @@ pub fn load_config() -> Config {
             .auth_file_read_timeout
             .unwrap_or("5".to_string())
             .parse()
-            .expect("AUTH_FILE_READ_TIMEOUT is not a number"),
+            .map_err(ConfigLoadError::AuthFileReadTimeoutNotANumber)?,
         twitch_client_id: config_builder
             .twitch_client_id
-            .expect("TWITCH_CLIENT_ID not set"),
+            .ok_or(ConfigLoadError::TwitchClientIdNotSet)?,
         twitch_client_secret: config_builder
             .twitch_client_secret
-            .expect("TWITCH_CLIENT_SECRET not set"),
+            .ok_or(ConfigLoadError::TwitchClientSecretNotSet)?,
         twitch_downloader_id: config_builder
             .twitch_downloader_id
             .unwrap_or("kimne78kx3ncx6brgo4mv6wki5h1ko".to_string()),
@@ -165,7 +207,7 @@ pub fn load_config() -> Config {
             .twitch_downloader_thread_count
             .unwrap_or("50".to_string())
             .parse()
-            .expect("TWITCH_DOWNLOADER_THREAD_COUNT is not a number"),
+            .map_err(ConfigLoadError::TwitchDownloaderThreadCountNotANumber)?,
         bigquery_project_id: config_builder
             .bigquery_project_id
             .unwrap_or("twitchbackup-v1".to_string()),
@@ -200,8 +242,10 @@ pub fn load_config() -> Config {
         download_folder_path: config_builder
             .download_folder_path
             .unwrap_or("/var/tmp/twba/videos/".to_string()),
-    };
+    })
+}
 
-    trace!("load_config() done");
-    config
+pub fn get_empty_config() -> Result<Config> {
+    let config_builder = ConfigBuilder::default();
+    build(config_builder)
 }

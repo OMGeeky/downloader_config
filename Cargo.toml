@@ -1,6 +1,6 @@
 [package]
 name = "twba-downloader-config"
-version = "0.4.4"
+version = "0.4.5"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,9 +8,10 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
+thiserror = "1.0"
 
 
-log = { version = "0.4", optional=true }
+log = { version = "0.4", optional = true }
 tracing = { version = "0.1", optional = true }
 
 
